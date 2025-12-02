@@ -1,0 +1,89 @@
+import zipfile
+import os
+import shutil
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
+from reportlab.lib.pagesizes import A4
+from reportlab.lib.styles import getSampleStyleSheet
+# É necessário instalar python-docx: pip install python-docx
+from docx import Document
+
+def generate_project_pack():
+    """
+    Cria um diretório temporário, gera um README, um arquivo DOCX e um PDF
+    e, em seguida, compacta todos eles em um arquivo ZIP.
+    """
+    # --- Configuração de Caminhos ---
+    # Usando o diretório atual para o pacote de arquivos e o ZIP
+    project_dir = "projeto_pack"
+    zip_path = "projeto_completo.zip"
+    
+    # Conteúdo de exemplo para os documentos
+    content = "Projeto Minimundo - Sistema de Autogestão de Estudos\nDocumento gerado automaticamente."
+
+    print(f"1. Preparando o diretório de trabalho: '{project_dir}'")
+    
+    # 1. Preparar/Limpar diretório
+    if os.path.exists(project_dir):
+        shutil.rmtree(project_dir)
+    os.makedirs(project_dir)
+    
+    # --- Geração de Arquivos ---
+
+    # 2. README.md (Arquivo Markdown Simples)
+    readme_path = os.path.join(project_dir, "README.md")
+    print(f"2. Gerando README.md em: {readme_path}")
+    with open(readme_path, "w", encoding="utf-8") as f:
+        f.write("# Projeto Minimundo\n\n")
+        f.write(content)
+
+    # 3. DOCX (Documento Word)
+    docx_path = os.path.join(project_dir, "projeto.docx")
+    print(f"3. Gerando projeto.docx em: {docx_path}")
+    try:
+        doc = Document()
+        doc.add_heading("Projeto Minimundo - Sistema de Autogestão de Estudos", 0)
+        doc.add_paragraph(content)
+        doc.save(docx_path)
+    except Exception as e:
+        print(f"Erro ao gerar DOCX: {e}")
+
+    # 4. PDF (Documento PDF usando ReportLab)
+    pdf_path = os.path.join(project_dir, "projeto.pdf")
+    print(f"4. Gerando projeto.pdf em: {pdf_path}")
+    try:
+        styles = getSampleStyleSheet()
+        doc_pdf = SimpleDocTemplate(pdf_path, pagesize=A4)
+        story = [
+            Paragraph("Projeto Minimundo - Sistema de Autogestão de Estudos", styles["Title"]),
+            Spacer(1, 12), # Espaçamento de 12 pontos
+            Paragraph(content, styles["Normal"])
+        ]
+        doc_pdf.build(story)
+    except Exception as e:
+        print(f"Erro ao gerar PDF (ReportLab): {e}")
+
+    # --- Compactação ---
+
+    # 5. Criar arquivo ZIP com os documentos gerados
+    print(f"5. Criando arquivo ZIP: '{zip_path}'")
+    try:
+        with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as z:
+            # Adiciona os arquivos ao ZIP, usando um nome mais limpo dentro do arquivo
+            z.write(readme_path, "README.md")
+            z.write(docx_path, "projeto.docx")
+            z.write(pdf_path, "projeto.pdf")
+        print(f"\nSucesso! Pacote completo gerado em: {os.path.abspath(zip_path)}")
+    except Exception as e:
+        print(f"Erro ao compactar arquivos: {e}")
+        
+    # --- Limpeza Final (Opcional) ---
+    # Limpa o diretório de trabalho após a criação do ZIP
+    # print(f"6. Removendo diretório de trabalho temporário: '{project_dir}'")
+    # shutil.rmtree(project_dir)
+
+if __name__ == "__main__":
+    # Remove o ZIP antigo se existir, para que possamos rodar o script novamente
+    if os.path.exists("projeto_completo.zip"):
+        os.remove("projeto_completo.zip")
+        
+    generate_project_pack()
